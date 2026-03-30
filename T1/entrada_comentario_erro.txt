@@ -1,3 +1,0 @@
-﻿algoritmo
-{ comentario
-fim_algoritmo

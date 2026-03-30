@@ -1,3 +1,0 @@
-﻿algoritmo
-escreva("texto
-fim_algoritmo

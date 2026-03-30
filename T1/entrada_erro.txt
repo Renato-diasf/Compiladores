@@ -1,4 +1,0 @@
-﻿algoritmo
-declare
-nome~ literal
-fim_algoritmo

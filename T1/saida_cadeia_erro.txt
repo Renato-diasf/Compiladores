@@ -1,4 +1,0 @@
-<'algoritmo',algoritmo>
-<'escreva',escreva>
-<'(',(>
-Linha 2: cadeia literal nao fechada

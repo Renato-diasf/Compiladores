@@ -1,2 +1,0 @@
-<'algoritmo',algoritmo>
-Linha 2: comentario nao fechado
