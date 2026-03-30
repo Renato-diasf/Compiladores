@@ -4,13 +4,13 @@ Projeto da disciplina **Construcao de Compiladores** (DC/UFSCar), com implementa
 
 ## Integrantes do grupo
 
-- Nome 1 - RA
-- Nome 2 - RA
-- Nome 3 - RA
+- Renato Dias Ferreira Campos - 821328
+- Murilo Eduardo Feijo Ramos - 
+- Leonardo Shoji Ishjy - 823830
 
 ## Requisitos
 
-- Java JDK 17+ (testado com JDK 17)
+- Java JDK 17+ (testado com JDK 25)
 - Sistema operacional: Windows, Linux ou macOS
 
 Para verificar as versoes instaladas:
