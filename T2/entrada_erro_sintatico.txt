@@ -1,0 +1,5 @@
+algoritmo
+    declare x: inteiro
+    se x > 5 entao
+        escreva("ok")
+fim_algoritmo
