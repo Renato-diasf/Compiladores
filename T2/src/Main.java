@@ -1,621 +1,738 @@
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class Main {
-    private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList(
-        "algoritmo", "fim_algoritmo", "declare", "literal", "inteiro", "real", "logico",
-        "leia", "escreva", "se", "entao", "senao", "fim_se", "caso", "seja", "fim_caso",
-        "para", "ate", "faca", "fim_para", "enquanto", "fim_enquanto", "registro",
-        "fim_registro", "tipo", "procedimento", "fim_procedimento", "funcao", "fim_funcao",
-        "var", "constante", "retorne", "nao", "e", "ou", "verdadeiro", "falso"
-    ));
-
-    private static final Set<String> DECL_START = new HashSet<>(Arrays.asList(
-        "declare", "constante", "tipo", "procedimento", "funcao"
-    ));
-
-    private static final Set<String> CMD_START = new HashSet<>(Arrays.asList(
-        "leia", "escreva", "se", "caso", "para", "enquanto", "faca", "retorne"
-    ));
-
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             return;
         }
 
-        Path entrada = Paths.get(args[0]);
-        Path saida = Paths.get(args[1]);
+        Path entrada = Path.of(args[0]);
+        Path saida = Path.of(args[1]);
 
-        String conteudo = Files.readString(entrada, StandardCharsets.UTF_8);
-        if (!conteudo.isEmpty() && conteudo.charAt(0) == '\uFEFF') {
-            conteudo = conteudo.substring(1);
+        String fonte = Files.readString(entrada, StandardCharsets.UTF_8);
+        if (!fonte.isEmpty() && fonte.charAt(0) == '\uFEFF') {
+            fonte = fonte.substring(1);
         }
 
-        String resultado = analisarSintaticamente(conteudo);
+        String resultado = analisar(fonte);
+        Files.writeString(saida, resultado, StandardCharsets.UTF_8);
+    }
 
-        try (BufferedWriter writer = Files.newBufferedWriter(saida, StandardCharsets.UTF_8)) {
-            writer.write(resultado);
+    private static String analisar(String fonte) {
+        try {
+            Lexer lexer = new Lexer(fonte);
+            Parser parser = new Parser(lexer.tokenizar());
+            parser.programa();
+            return "";
+        } catch (LexicalException e) {
+            return "Linha " + e.line + ": " + e.message + "\nFim da compilacao\n";
+        } catch (SyntaxException e) {
+            Token token = e.token;
+            return "Linha " + token.line + ": erro sintatico proximo a " + token.lexeme
+                + "\nFim da compilacao\n";
         }
     }
 
-    private static String analisarSintaticamente(String fonte) {
-        try {
-            Lexer lexer = new Lexer(fonte);
-            List<Token> tokens = lexer.tokenizar();
-            Parser parser = new Parser(tokens);
-            parser.programa();
-            return "";
-        } catch (ParseException e) {
-            Token t = e.token;
-            String proximo = "EOF".equals(t.tipo) ? "EOF" : t.lexema;
-            return "Linha " + t.linha + ": erro sintatico proximo a " + proximo + "\n";
-        } catch (LexException e) {
-            return "Linha " + e.linha + ": " + e.mensagem + "\n";
+    private enum TokenType {
+        ALGORITMO("algoritmo"),
+        FIM_ALGORITMO("fim_algoritmo"),
+        DECLARE("declare"),
+        LITERAL("literal"),
+        INTEIRO("inteiro"),
+        REAL("real"),
+        LOGICO("logico"),
+        LEIA("leia"),
+        ESCREVA("escreva"),
+        SE("se"),
+        ENTAO("entao"),
+        SENAO("senao"),
+        FIM_SE("fim_se"),
+        CASO("caso"),
+        SEJA("seja"),
+        FIM_CASO("fim_caso"),
+        PARA("para"),
+        ATE("ate"),
+        FACA("faca"),
+        FIM_PARA("fim_para"),
+        ENQUANTO("enquanto"),
+        FIM_ENQUANTO("fim_enquanto"),
+        REGISTRO("registro"),
+        FIM_REGISTRO("fim_registro"),
+        TIPO("tipo"),
+        PROCEDIMENTO("procedimento"),
+        FIM_PROCEDIMENTO("fim_procedimento"),
+        FUNCAO("funcao"),
+        FIM_FUNCAO("fim_funcao"),
+        VAR("var"),
+        CONSTANTE("constante"),
+        RETORNE("retorne"),
+        NAO("nao"),
+        E("e"),
+        OU("ou"),
+        VERDADEIRO("verdadeiro"),
+        FALSO("falso"),
+        IDENT("IDENT"),
+        NUM_INT("NUM_INT"),
+        NUM_REAL("NUM_REAL"),
+        CADEIA("CADEIA"),
+        ABRE_PAR("("),
+        FECHA_PAR(")"),
+        ABRE_COL("["),
+        FECHA_COL("]"),
+        VIRGULA(","),
+        DOIS_PONTOS(":"),
+        PONTO("."),
+        ATRIBUICAO("<-"),
+        MENOR("<"),
+        MENOR_IGUAL("<="),
+        MAIOR(">"),
+        MAIOR_IGUAL(">="),
+        DIFERENTE("<>"),
+        IGUAL("="),
+        SOMA("+"),
+        SUB("-"),
+        MULT("*"),
+        DIV("/"),
+        MOD("%"),
+        CIRCUNFLEXO("^"),
+        E_COMERCIAL("&"),
+        INTERVALO(".."),
+        EOF("EOF");
+
+        final String image;
+
+        TokenType(String image) {
+            this.image = image;
         }
     }
 
     private static final class Token {
-        final String tipo;
-        final String lexema;
-        final int linha;
+        final TokenType type;
+        final String lexeme;
+        final int line;
 
-        Token(String tipo, String lexema, int linha) {
-            this.tipo = tipo;
-            this.lexema = lexema;
-            this.linha = linha;
+        Token(TokenType type, String lexeme, int line) {
+            this.type = type;
+            this.lexeme = lexeme;
+            this.line = line;
         }
     }
 
-    private static final class LexException extends RuntimeException {
-        final int linha;
-        final String mensagem;
+    private static final class LexicalException extends RuntimeException {
+        final int line;
+        final String message;
 
-        LexException(int linha, String mensagem) {
-            this.linha = linha;
-            this.mensagem = mensagem;
+        LexicalException(int line, String message) {
+            this.line = line;
+            this.message = message;
         }
     }
 
-    private static final class ParseException extends RuntimeException {
+    private static final class SyntaxException extends RuntimeException {
         final Token token;
 
-        ParseException(Token token) {
+        SyntaxException(Token token) {
             this.token = token;
         }
     }
 
     private static final class Lexer {
-        private final String texto;
-        private int i;
-        private int linha;
+        private final String input;
+        private int index;
+        private int line;
 
-        Lexer(String texto) {
-            this.texto = texto;
-            this.i = 0;
-            this.linha = 1;
+        Lexer(String input) {
+            this.input = input;
+            this.index = 0;
+            this.line = 1;
         }
 
         List<Token> tokenizar() {
             List<Token> tokens = new ArrayList<>();
 
-            while (i < texto.length()) {
-                char c = texto.charAt(i);
+            while (!isAtEnd()) {
+                char current = peek();
 
-                if (c == ' ' || c == '\t' || c == '\r') {
-                    i++;
+                if (current == ' ' || current == '\t' || current == '\r') {
+                    advance();
                     continue;
                 }
 
-                if (c == '\n') {
-                    linha++;
-                    i++;
+                if (current == '\n') {
+                    line++;
+                    advance();
                     continue;
                 }
 
-                if (c == '{') {
-                    int linhaComentario = linha;
-                    i++;
-                    boolean fechado = false;
-                    while (i < texto.length()) {
-                        char cc = texto.charAt(i);
-                        if (cc == '}') {
-                            fechado = true;
-                            i++;
-                            break;
-                        }
-                        if (cc == '\n') {
-                            throw new LexException(linhaComentario, "comentario nao fechado");
-                        }
-                        i++;
-                    }
-                    if (!fechado) {
-                        throw new LexException(linhaComentario, "comentario nao fechado");
-                    }
+                if (current == '{') {
+                    readComment();
                     continue;
                 }
 
-                if (c == '"') {
-                    int linhaCadeia = linha;
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(c);
-                    i++;
-                    boolean fechada = false;
-
-                    while (i < texto.length()) {
-                        char cc = texto.charAt(i);
-                        if (cc == '"') {
-                            sb.append(cc);
-                            i++;
-                            fechada = true;
-                            break;
-                        }
-                        if (cc == '\n') {
-                            throw new LexException(linhaCadeia, "cadeia literal nao fechada");
-                        }
-                        sb.append(cc);
-                        i++;
-                    }
-
-                    if (!fechada) {
-                        throw new LexException(linhaCadeia, "cadeia literal nao fechada");
-                    }
-
-                    tokens.add(new Token("CADEIA", sb.toString(), linhaCadeia));
+                if (current == '"') {
+                    tokens.add(readString());
                     continue;
                 }
 
-                if (Character.isLetter(c) || c == '_') {
-                    int ini = i;
-                    i++;
-                    while (i < texto.length()) {
-                        char cc = texto.charAt(i);
-                        if (Character.isLetterOrDigit(cc) || cc == '_') {
-                            i++;
-                        } else {
-                            break;
-                        }
-                    }
-                    String lex = texto.substring(ini, i);
-                    if (KEYWORDS.contains(lex)) {
-                        tokens.add(new Token(lex, lex, linha));
-                    } else {
-                        tokens.add(new Token("IDENT", lex, linha));
-                    }
+                if (Character.isLetter(current) || current == '_') {
+                    tokens.add(readIdentifier());
                     continue;
                 }
 
-                if (Character.isDigit(c)) {
-                    int ini = i;
-                    while (i < texto.length() && Character.isDigit(texto.charAt(i))) {
-                        i++;
-                    }
-
-                    String tipo = "NUM_INT";
-                    if (i < texto.length() && texto.charAt(i) == '.') {
-                        boolean intervalo = i + 1 < texto.length() && texto.charAt(i + 1) == '.';
-                        if (!intervalo && i + 1 < texto.length() && Character.isDigit(texto.charAt(i + 1))) {
-                            tipo = "NUM_REAL";
-                            i++;
-                            while (i < texto.length() && Character.isDigit(texto.charAt(i))) {
-                                i++;
-                            }
-                        }
-                    }
-
-                    tokens.add(new Token(tipo, texto.substring(ini, i), linha));
+                if (Character.isDigit(current)) {
+                    tokens.add(readNumber());
                     continue;
                 }
 
-                if (c == '<') {
-                    if (tem("<=")) {
-                        tokens.add(new Token("<=", "<=", linha));
-                        i += 2;
-                    } else if (tem("<>") ) {
-                        tokens.add(new Token("<>", "<>", linha));
-                        i += 2;
-                    } else if (tem("<-")) {
-                        tokens.add(new Token("<-", "<-", linha));
-                        i += 2;
-                    } else {
-                        tokens.add(new Token("<", "<", linha));
-                        i++;
-                    }
-                    continue;
-                }
-
-                if (c == '>') {
-                    if (tem(">=")) {
-                        tokens.add(new Token(">=", ">=", linha));
-                        i += 2;
-                    } else {
-                        tokens.add(new Token(">", ">", linha));
-                        i++;
-                    }
-                    continue;
-                }
-
-                if (c == '.') {
-                    if (tem("..")) {
-                        tokens.add(new Token("..", "..", linha));
-                        i += 2;
-                    } else {
-                        tokens.add(new Token(".", ".", linha));
-                        i++;
-                    }
-                    continue;
-                }
-
-                if (":,;()[]^&+-*/=%".indexOf(c) >= 0) {
-                    String s = Character.toString(c);
-                    tokens.add(new Token(s, s, linha));
-                    i++;
-                    continue;
-                }
-
-                throw new LexException(linha, c + " - simbolo nao identificado");
+                tokens.add(readSymbol());
             }
 
-            tokens.add(new Token("EOF", "EOF", linha));
+            tokens.add(new Token(TokenType.EOF, "EOF", line));
             return tokens;
         }
 
-        private boolean tem(String s) {
-            return i + s.length() <= texto.length() && texto.substring(i, i + s.length()).equals(s);
+        private void readComment() {
+            int startLine = line;
+            advance();
+
+            while (!isAtEnd()) {
+                char current = peek();
+                if (current == '}') {
+                    advance();
+                    return;
+                }
+                if (current == '\n') {
+                    throw new LexicalException(startLine, "comentario nao fechado");
+                }
+                advance();
+            }
+
+            throw new LexicalException(startLine, "comentario nao fechado");
+        }
+
+        private Token readString() {
+            int startLine = line;
+            StringBuilder builder = new StringBuilder();
+            builder.append(advance());
+
+            while (!isAtEnd()) {
+                char current = peek();
+                if (current == '"') {
+                    builder.append(advance());
+                    return new Token(TokenType.CADEIA, builder.toString(), startLine);
+                }
+                if (current == '\n') {
+                    throw new LexicalException(startLine, "cadeia literal nao fechada");
+                }
+                builder.append(advance());
+            }
+
+            throw new LexicalException(startLine, "cadeia literal nao fechada");
+        }
+
+        private Token readIdentifier() {
+            int start = index;
+            while (!isAtEnd() && (Character.isLetterOrDigit(peek()) || peek() == '_')) {
+                advance();
+            }
+
+            String lexeme = input.substring(start, index);
+            TokenType type = switch (lexeme) {
+                case "algoritmo" -> TokenType.ALGORITMO;
+                case "fim_algoritmo" -> TokenType.FIM_ALGORITMO;
+                case "declare" -> TokenType.DECLARE;
+                case "literal" -> TokenType.LITERAL;
+                case "inteiro" -> TokenType.INTEIRO;
+                case "real" -> TokenType.REAL;
+                case "logico" -> TokenType.LOGICO;
+                case "leia" -> TokenType.LEIA;
+                case "escreva" -> TokenType.ESCREVA;
+                case "se" -> TokenType.SE;
+                case "entao" -> TokenType.ENTAO;
+                case "senao" -> TokenType.SENAO;
+                case "fim_se" -> TokenType.FIM_SE;
+                case "caso" -> TokenType.CASO;
+                case "seja" -> TokenType.SEJA;
+                case "fim_caso" -> TokenType.FIM_CASO;
+                case "para" -> TokenType.PARA;
+                case "ate" -> TokenType.ATE;
+                case "faca" -> TokenType.FACA;
+                case "fim_para" -> TokenType.FIM_PARA;
+                case "enquanto" -> TokenType.ENQUANTO;
+                case "fim_enquanto" -> TokenType.FIM_ENQUANTO;
+                case "registro" -> TokenType.REGISTRO;
+                case "fim_registro" -> TokenType.FIM_REGISTRO;
+                case "tipo" -> TokenType.TIPO;
+                case "procedimento" -> TokenType.PROCEDIMENTO;
+                case "fim_procedimento" -> TokenType.FIM_PROCEDIMENTO;
+                case "funcao" -> TokenType.FUNCAO;
+                case "fim_funcao" -> TokenType.FIM_FUNCAO;
+                case "var" -> TokenType.VAR;
+                case "constante" -> TokenType.CONSTANTE;
+                case "retorne" -> TokenType.RETORNE;
+                case "nao" -> TokenType.NAO;
+                case "e" -> TokenType.E;
+                case "ou" -> TokenType.OU;
+                case "verdadeiro" -> TokenType.VERDADEIRO;
+                case "falso" -> TokenType.FALSO;
+                default -> TokenType.IDENT;
+            };
+
+            return new Token(type, lexeme, line);
+        }
+
+        private Token readNumber() {
+            int start = index;
+            while (!isAtEnd() && Character.isDigit(peek())) {
+                advance();
+            }
+
+            TokenType type = TokenType.NUM_INT;
+            if (!isAtEnd() && peek() == '.' && !nextIs('.')) {
+                int dotIndex = index;
+                advance();
+                if (!isAtEnd() && Character.isDigit(peek())) {
+                    type = TokenType.NUM_REAL;
+                    while (!isAtEnd() && Character.isDigit(peek())) {
+                        advance();
+                    }
+                } else {
+                    index = dotIndex;
+                }
+            }
+
+            return new Token(type, input.substring(start, index), line);
+        }
+
+        private Token readSymbol() {
+            int currentLine = line;
+
+            if (match("<-")) {
+                return new Token(TokenType.ATRIBUICAO, "<-", currentLine);
+            }
+            if (match("<=")) {
+                return new Token(TokenType.MENOR_IGUAL, "<=", currentLine);
+            }
+            if (match(">=")) {
+                return new Token(TokenType.MAIOR_IGUAL, ">=", currentLine);
+            }
+            if (match("<>")) {
+                return new Token(TokenType.DIFERENTE, "<>", currentLine);
+            }
+            if (match("..")) {
+                return new Token(TokenType.INTERVALO, "..", currentLine);
+            }
+
+            char current = advance();
+            TokenType type = switch (current) {
+                case '(' -> TokenType.ABRE_PAR;
+                case ')' -> TokenType.FECHA_PAR;
+                case '[' -> TokenType.ABRE_COL;
+                case ']' -> TokenType.FECHA_COL;
+                case ',' -> TokenType.VIRGULA;
+                case ':' -> TokenType.DOIS_PONTOS;
+                case '.' -> TokenType.PONTO;
+                case '<' -> TokenType.MENOR;
+                case '>' -> TokenType.MAIOR;
+                case '=' -> TokenType.IGUAL;
+                case '+' -> TokenType.SOMA;
+                case '-' -> TokenType.SUB;
+                case '*' -> TokenType.MULT;
+                case '/' -> TokenType.DIV;
+                case '%' -> TokenType.MOD;
+                case '^' -> TokenType.CIRCUNFLEXO;
+                case '&' -> TokenType.E_COMERCIAL;
+                default -> null;
+            };
+
+            if (type == null) {
+                throw new LexicalException(currentLine, current + " - simbolo nao identificado");
+            }
+
+            return new Token(type, String.valueOf(current), currentLine);
+        }
+
+        private boolean isAtEnd() {
+            return index >= input.length();
+        }
+
+        private char peek() {
+            return input.charAt(index);
+        }
+
+        private boolean nextIs(char expected) {
+            return index + 1 < input.length() && input.charAt(index + 1) == expected;
+        }
+
+        private char advance() {
+            return input.charAt(index++);
+        }
+
+        private boolean match(String expected) {
+            if (input.startsWith(expected, index)) {
+                index += expected.length();
+                return true;
+            }
+            return false;
         }
     }
 
     private static final class Parser {
         private final List<Token> tokens;
-        private int pos;
+        private int current;
 
         Parser(List<Token> tokens) {
             this.tokens = tokens;
-            this.pos = 0;
         }
 
         void programa() {
-            while (isDeclaracaoGlobalInicio(atual()) || isDeclaracaoLocalInicio(atual())) {
+            while (isDeclaracaoLocalGlobalStart(peek())) {
                 declaracaoLocalGlobal();
             }
 
-            expect("algoritmo");
-
-            corpoAlgoritmo();
-
-            expect("fim_algoritmo");
-            expect("EOF");
+            expect(TokenType.ALGORITMO);
+            corpo();
+            expect(TokenType.FIM_ALGORITMO);
+            expect(TokenType.EOF);
         }
 
-        private void declaracaoLocalGlobal() {
-            if (isDeclaracaoGlobalInicio(atual())) {
-                declaracaoGlobal();
-                return;
-            }
-
-            declaracaoLocal();
-        }
-
-        private void corpoAlgoritmo() {
-            while (isDeclaracaoLocalInicio(atual())) {
+        private void corpo() {
+            while (isDeclaracaoLocalStart(peek())) {
                 declaracaoLocal();
             }
 
-            while (isComandoInicio(atual())) {
-                comando();
+            while (isCommandStart(peek())) {
+                cmd();
+            }
+        }
+
+        private void declaracaoLocalGlobal() {
+            if (check(TokenType.PROCEDIMENTO) || check(TokenType.FUNCAO)) {
+                declaracaoGlobal();
+            } else {
+                declaracaoLocal();
             }
         }
 
         private void declaracaoLocal() {
-            if (accept("declare")) {
+            if (match(TokenType.DECLARE)) {
                 variavel();
                 return;
             }
 
-            if (accept("constante")) {
-                expect("IDENT");
-                expect(":");
-                tipoEstendido();
-                expect("=");
+            if (match(TokenType.CONSTANTE)) {
+                expect(TokenType.IDENT);
+                expect(TokenType.DOIS_PONTOS);
+                tipoBasico();
+                expect(TokenType.IGUAL);
                 valorConstante();
                 return;
             }
 
-            if (accept("tipo")) {
-                expect("IDENT");
-                expect(":");
+            if (match(TokenType.TIPO)) {
+                expect(TokenType.IDENT);
+                expect(TokenType.DOIS_PONTOS);
                 tipo();
                 return;
             }
 
-            erro(atual());
+            error(peek());
         }
 
         private void declaracaoGlobal() {
-            if (accept("procedimento")) {
-                expect("IDENT");
-                if (accept("(")) {
-                    if (!check(")")) {
-                        parametros();
-                    }
-                    expect(")");
-                }
-
-                corpoAlgoritmo();
-                expect("fim_procedimento");
-                return;
-            }
-
-            if (accept("funcao")) {
-                expect("IDENT");
-                expect("(");
-                if (!check(")")) {
+            if (match(TokenType.PROCEDIMENTO)) {
+                expect(TokenType.IDENT);
+                expect(TokenType.ABRE_PAR);
+                if (!check(TokenType.FECHA_PAR)) {
                     parametros();
                 }
-                expect(")");
-                expect(":");
-                tipoEstendido();
-
-                corpoAlgoritmo();
-                expect("fim_funcao");
+                expect(TokenType.FECHA_PAR);
+                corpo();
+                expect(TokenType.FIM_PROCEDIMENTO);
                 return;
             }
 
-            erro(atual());
+            if (match(TokenType.FUNCAO)) {
+                expect(TokenType.IDENT);
+                expect(TokenType.ABRE_PAR);
+                if (!check(TokenType.FECHA_PAR)) {
+                    parametros();
+                }
+                expect(TokenType.FECHA_PAR);
+                expect(TokenType.DOIS_PONTOS);
+                tipoEstendido();
+                corpo();
+                expect(TokenType.FIM_FUNCAO);
+                return;
+            }
+
+            error(peek());
         }
 
         private void parametros() {
             parametro();
-            while (accept(",")) {
+            while (match(TokenType.VIRGULA)) {
                 parametro();
             }
         }
 
         private void parametro() {
-            if (accept("var")) {
-                // opcional
+            match(TokenType.VAR);
+            identificador();
+            while (match(TokenType.VIRGULA)) {
+                identificador();
             }
-            identificadores();
-            expect(":");
+            expect(TokenType.DOIS_PONTOS);
             tipoEstendido();
         }
 
         private void variavel() {
-            identificadores();
-            expect(":");
+            identificador();
+            while (match(TokenType.VIRGULA)) {
+                identificador();
+            }
+            expect(TokenType.DOIS_PONTOS);
             tipo();
         }
 
-        private void identificadores() {
-            identificador();
-            while (accept(",")) {
-                identificador();
-            }
-        }
-
-        private void identificador() {
-            while (accept("^")) {
-                // ponteiro opcional em acesso
-            }
-
-            expect("IDENT");
-
-            while (accept(".")) {
-                expect("IDENT");
-            }
-
-            if (accept("[")) {
-                expressao();
-                while (accept(",")) {
-                    expressao();
-                }
-                expect("]");
-            }
-        }
-
         private void tipo() {
-            if (accept("literal") || accept("inteiro") || accept("real") || accept("logico")) {
+            if (isTipoBasico(peek())) {
+                advance();
                 return;
             }
 
-            if (accept("registro")) {
-                while (check("IDENT")) {
+            if (match(TokenType.REGISTRO)) {
+                while (check(TokenType.IDENT)) {
                     variavel();
                 }
-                expect("fim_registro");
+                expect(TokenType.FIM_REGISTRO);
                 return;
             }
 
             tipoEstendido();
         }
 
-        private void tipoEstendido() {
-            while (accept("^")) {
-                // marcador de ponteiro
-            }
-
-            if (accept("literal") || accept("inteiro") || accept("real") || accept("logico") || accept("IDENT")) {
+        private void tipoBasico() {
+            if (match(TokenType.LITERAL) || match(TokenType.INTEIRO)
+                || match(TokenType.REAL) || match(TokenType.LOGICO)) {
                 return;
             }
-            erro(atual());
+            error(peek());
+        }
+
+        private void tipoEstendido() {
+            while (match(TokenType.CIRCUNFLEXO)) {
+                // ponteiro opcional
+            }
+
+            if (match(TokenType.LITERAL) || match(TokenType.INTEIRO)
+                || match(TokenType.REAL) || match(TokenType.LOGICO)
+                || match(TokenType.IDENT)) {
+                return;
+            }
+
+            error(peek());
         }
 
         private void valorConstante() {
-            if (accept("CADEIA") || accept("NUM_INT") || accept("NUM_REAL") || accept("verdadeiro") || accept("falso")) {
+            if (match(TokenType.CADEIA) || match(TokenType.NUM_INT)
+                || match(TokenType.NUM_REAL) || match(TokenType.VERDADEIRO)
+                || match(TokenType.FALSO)) {
                 return;
             }
-            if (accept("-")) {
-                if (accept("NUM_INT") || accept("NUM_REAL")) {
+
+            if (match(TokenType.SUB)) {
+                if (match(TokenType.NUM_INT) || match(TokenType.NUM_REAL)) {
                     return;
                 }
             }
-            erro(atual());
+
+            error(peek());
         }
 
-        private void comando() {
-            if (accept("leia")) {
-                expect("(");
-                identificador();
-                while (accept(",")) {
-                    identificador();
-                }
-                expect(")");
-                return;
+        private void identificador() {
+            while (match(TokenType.CIRCUNFLEXO)) {
+                // desreferencia/prefixo de ponteiro
             }
 
-            if (accept("escreva")) {
-                expect("(");
+            expect(TokenType.IDENT);
+
+            while (match(TokenType.PONTO)) {
+                expect(TokenType.IDENT);
+            }
+
+            while (match(TokenType.ABRE_COL)) {
                 expressao();
-                while (accept(",")) {
+                while (match(TokenType.VIRGULA)) {
                     expressao();
                 }
-                expect(")");
-                return;
+                expect(TokenType.FECHA_COL);
             }
+        }
 
-            if (accept("se")) {
-                expressao();
-                expect("entao");
-                while (isComandoInicio(atual())) {
-                    comando();
-                }
-                if (accept("senao")) {
-                    while (isComandoInicio(atual())) {
-                        comando();
-                    }
-                }
-                expect("fim_se");
-                return;
-            }
-
-            if (accept("caso")) {
-                expAritmetica();
-                expect("seja");
-                while (isNumeroIntervaloInicio(atual())) {
-                    selecaoItem();
-                }
-                if (accept("senao")) {
-                    while (isComandoInicio(atual())) {
-                        comando();
-                    }
-                }
-                expect("fim_caso");
-                return;
-            }
-
-            if (accept("para")) {
-                expect("IDENT");
-                expect("<-");
-                expAritmetica();
-                expect("ate");
-                expAritmetica();
-                expect("faca");
-                while (isComandoInicio(atual())) {
-                    comando();
-                }
-                expect("fim_para");
-                return;
-            }
-
-            if (accept("enquanto")) {
-                expressao();
-                expect("faca");
-                while (isComandoInicio(atual())) {
-                    comando();
-                }
-                expect("fim_enquanto");
-                return;
-            }
-
-            if (accept("faca")) {
-                while (isComandoInicio(atual())) {
-                    comando();
-                }
-                expect("ate");
-                expressao();
-                return;
-            }
-
-            if (accept("retorne")) {
-                expressao();
-                return;
-            }
-
-            if (check("IDENT") || check("^") ) {
+        private void cmd() {
+            if (match(TokenType.LEIA)) {
+                expect(TokenType.ABRE_PAR);
                 identificador();
-                if (accept("<-") ) {
+                while (match(TokenType.VIRGULA)) {
+                    identificador();
+                }
+                expect(TokenType.FECHA_PAR);
+                return;
+            }
+
+            if (match(TokenType.ESCREVA)) {
+                expect(TokenType.ABRE_PAR);
+                expressao();
+                while (match(TokenType.VIRGULA)) {
+                    expressao();
+                }
+                expect(TokenType.FECHA_PAR);
+                return;
+            }
+
+            if (match(TokenType.SE)) {
+                expressao();
+                expect(TokenType.ENTAO);
+                while (isCommandStart(peek())) {
+                    cmd();
+                }
+                if (match(TokenType.SENAO)) {
+                    while (isCommandStart(peek())) {
+                        cmd();
+                    }
+                }
+                expect(TokenType.FIM_SE);
+                return;
+            }
+
+            if (match(TokenType.CASO)) {
+                expAritmetica();
+                expect(TokenType.SEJA);
+                while (isNumeroIntervaloStart(peek())) {
+                    itemSelecao();
+                }
+                if (match(TokenType.SENAO)) {
+                    while (isCommandStart(peek())) {
+                        cmd();
+                    }
+                }
+                expect(TokenType.FIM_CASO);
+                return;
+            }
+
+            if (match(TokenType.PARA)) {
+                expect(TokenType.IDENT);
+                expect(TokenType.ATRIBUICAO);
+                expAritmetica();
+                expect(TokenType.ATE);
+                expAritmetica();
+                expect(TokenType.FACA);
+                while (isCommandStart(peek())) {
+                    cmd();
+                }
+                expect(TokenType.FIM_PARA);
+                return;
+            }
+
+            if (match(TokenType.ENQUANTO)) {
+                expressao();
+                expect(TokenType.FACA);
+                while (isCommandStart(peek())) {
+                    cmd();
+                }
+                expect(TokenType.FIM_ENQUANTO);
+                return;
+            }
+
+            if (match(TokenType.FACA)) {
+                while (isCommandStart(peek())) {
+                    cmd();
+                }
+                expect(TokenType.ATE);
+                expressao();
+                return;
+            }
+
+            if (match(TokenType.RETORNE)) {
+                expressao();
+                return;
+            }
+
+            if (check(TokenType.IDENT) || check(TokenType.CIRCUNFLEXO)) {
+                identificador();
+                if (match(TokenType.ATRIBUICAO)) {
                     expressao();
                     return;
                 }
-                if (accept("(")) {
-                    if (!check(")")) {
+                if (match(TokenType.ABRE_PAR)) {
+                    if (!check(TokenType.FECHA_PAR)) {
                         expressao();
-                        while (accept(",")) {
+                        while (match(TokenType.VIRGULA)) {
                             expressao();
                         }
                     }
-                    expect(")");
+                    expect(TokenType.FECHA_PAR);
                     return;
                 }
             }
 
-            erro(atual());
+            error(peek());
         }
 
-        private void selecaoItem() {
-            numeroIntervalo();
-            while (accept(",")) {
-                numeroIntervalo();
+        private void itemSelecao() {
+            constantes();
+            expect(TokenType.DOIS_PONTOS);
+            while (isCommandStart(peek())) {
+                cmd();
             }
-            expect(":");
-            while (isComandoInicio(atual())) {
-                comando();
+        }
+
+        private void constantes() {
+            numeroIntervalo();
+            while (match(TokenType.VIRGULA)) {
+                numeroIntervalo();
             }
         }
 
         private void numeroIntervalo() {
-            numeroInteiroComSinal();
-            if (accept("..")) {
-                numeroInteiroComSinal();
+            numeroInteiro();
+            if (match(TokenType.INTERVALO)) {
+                numeroInteiro();
             }
         }
 
-        private void numeroInteiroComSinal() {
-            if (accept("+") || accept("-")) {
-                // sinal opcional
-            }
-            expect("NUM_INT");
+        private void numeroInteiro() {
+            match(TokenType.SOMA);
+            match(TokenType.SUB);
+            expect(TokenType.NUM_INT);
         }
 
         private void expressao() {
             termoLogico();
-            while (accept("ou")) {
+            while (match(TokenType.OU)) {
                 termoLogico();
             }
         }
 
         private void termoLogico() {
             fatorLogico();
-            while (accept("e")) {
+            while (match(TokenType.E)) {
                 fatorLogico();
             }
         }
 
         private void fatorLogico() {
-            accept("nao");
+            match(TokenType.NAO);
             parcelaLogica();
         }
 
         private void parcelaLogica() {
-            if (accept("verdadeiro") || accept("falso")) {
+            if (match(TokenType.VERDADEIRO) || match(TokenType.FALSO)) {
                 return;
             }
             expRelacional();
@@ -623,132 +740,137 @@ public class Main {
 
         private void expRelacional() {
             expAritmetica();
-            if (isOperadorRelacional(atual())) {
-                avancar();
+            if (isOperadorRelacional(peek())) {
+                advance();
                 expAritmetica();
             }
         }
 
         private void expAritmetica() {
             termo();
-            while (check("+") || check("-")) {
-                avancar();
+            while (match(TokenType.SOMA) || match(TokenType.SUB)) {
                 termo();
             }
         }
 
         private void termo() {
             fator();
-            while (check("*") || check("/") || check("%")) {
-                avancar();
+            while (match(TokenType.MULT) || match(TokenType.DIV) || match(TokenType.MOD)) {
                 fator();
             }
         }
 
         private void fator() {
             parcela();
-            while (check("^") ) {
-                avancar();
+            while (match(TokenType.CIRCUNFLEXO)) {
                 parcela();
             }
         }
 
         private void parcela() {
-            if (accept("+") || accept("-")) {
-                // sinal unario
-            }
+            boolean hasUnary = match(TokenType.SOMA) || match(TokenType.SUB);
 
-            if (accept("NUM_INT") || accept("NUM_REAL") || accept("CADEIA")) {
+            if (match(TokenType.NUM_INT) || match(TokenType.NUM_REAL) || match(TokenType.CADEIA)
+                || match(TokenType.VERDADEIRO) || match(TokenType.FALSO)) {
                 return;
             }
 
-            if (accept("verdadeiro") || accept("falso")) {
-                return;
-            }
-
-            if (accept("&")) {
+            if (match(TokenType.E_COMERCIAL)) {
                 identificador();
                 return;
             }
 
-            if (accept("(")) {
+            if (match(TokenType.ABRE_PAR)) {
                 expressao();
-                expect(")");
+                expect(TokenType.FECHA_PAR);
                 return;
             }
 
-            if (check("IDENT") || check("^") ) {
+            if (check(TokenType.IDENT) || check(TokenType.CIRCUNFLEXO)) {
                 identificador();
-                if (accept("(")) {
-                    if (!check(")")) {
+                if (match(TokenType.ABRE_PAR)) {
+                    if (!check(TokenType.FECHA_PAR)) {
                         expressao();
-                        while (accept(",")) {
+                        while (match(TokenType.VIRGULA)) {
                             expressao();
                         }
                     }
-                    expect(")");
+                    expect(TokenType.FECHA_PAR);
                 }
                 return;
             }
 
-            erro(atual());
-        }
-
-        private boolean isOperadorRelacional(Token t) {
-            return "=".equals(t.tipo) || "<>".equals(t.tipo) || ">=".equals(t.tipo)
-                || "<=".equals(t.tipo) || ">".equals(t.tipo) || "<".equals(t.tipo);
-        }
-
-        private boolean isNumeroIntervaloInicio(Token t) {
-            return "+".equals(t.tipo) || "-".equals(t.tipo) || "NUM_INT".equals(t.tipo);
-        }
-
-        private boolean isDeclaracaoLocalInicio(Token t) {
-            return "declare".equals(t.tipo) || "constante".equals(t.tipo) || "tipo".equals(t.tipo);
-        }
-
-        private boolean isDeclaracaoGlobalInicio(Token t) {
-            return "procedimento".equals(t.tipo) || "funcao".equals(t.tipo);
-        }
-
-        private boolean isDeclaracaoInicio(Token t) {
-            return DECL_START.contains(t.tipo);
-        }
-
-        private boolean isComandoInicio(Token t) {
-            return CMD_START.contains(t.tipo) || "IDENT".equals(t.tipo) || "^".equals(t.tipo);
-        }
-
-        private Token atual() {
-            return tokens.get(pos);
-        }
-
-        private void avancar() {
-            if (pos < tokens.size() - 1) {
-                pos++;
+            if (hasUnary) {
+                error(peek());
             }
+            error(peek());
         }
 
-        private boolean check(String tipo) {
-            return tipo.equals(atual().tipo);
+        private boolean isTipoBasico(Token token) {
+            return token.type == TokenType.LITERAL || token.type == TokenType.INTEIRO
+                || token.type == TokenType.REAL || token.type == TokenType.LOGICO;
         }
 
-        private boolean accept(String tipo) {
-            if (check(tipo)) {
-                avancar();
+        private boolean isOperadorRelacional(Token token) {
+            return token.type == TokenType.IGUAL || token.type == TokenType.DIFERENTE
+                || token.type == TokenType.MAIOR_IGUAL || token.type == TokenType.MENOR_IGUAL
+                || token.type == TokenType.MAIOR || token.type == TokenType.MENOR;
+        }
+
+        private boolean isDeclaracaoLocalStart(Token token) {
+            return token.type == TokenType.DECLARE || token.type == TokenType.CONSTANTE
+                || token.type == TokenType.TIPO;
+        }
+
+        private boolean isDeclaracaoLocalGlobalStart(Token token) {
+            return isDeclaracaoLocalStart(token) || token.type == TokenType.PROCEDIMENTO
+                || token.type == TokenType.FUNCAO;
+        }
+
+        private boolean isCommandStart(Token token) {
+            return token.type == TokenType.LEIA || token.type == TokenType.ESCREVA
+                || token.type == TokenType.SE || token.type == TokenType.CASO
+                || token.type == TokenType.PARA || token.type == TokenType.ENQUANTO
+                || token.type == TokenType.FACA || token.type == TokenType.RETORNE
+                || token.type == TokenType.IDENT || token.type == TokenType.CIRCUNFLEXO;
+        }
+
+        private boolean isNumeroIntervaloStart(Token token) {
+            return token.type == TokenType.SOMA || token.type == TokenType.SUB
+                || token.type == TokenType.NUM_INT;
+        }
+
+        private Token peek() {
+            return tokens.get(current);
+        }
+
+        private Token advance() {
+            if (current < tokens.size() - 1) {
+                current++;
+            }
+            return tokens.get(current - 1);
+        }
+
+        private boolean check(TokenType type) {
+            return peek().type == type;
+        }
+
+        private boolean match(TokenType type) {
+            if (check(type)) {
+                advance();
                 return true;
             }
             return false;
         }
 
-        private void expect(String tipo) {
-            if (!accept(tipo)) {
-                erro(atual());
+        private void expect(TokenType type) {
+            if (!match(type)) {
+                error(peek());
             }
         }
 
-        private void erro(Token t) {
-            throw new ParseException(t);
+        private void error(Token token) {
+            throw new SyntaxException(token);
         }
     }
 }
