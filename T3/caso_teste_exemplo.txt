@@ -1,0 +1,4 @@
+algoritmo
+    declare x: inteiro
+    x <- "abc"
+fim_algoritmo
