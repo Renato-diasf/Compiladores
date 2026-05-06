@@ -28,11 +28,11 @@ public class Main {
             parser.programa();
             return "";
         } catch (LexicalException e) {
-            return "Linha " + e.line + ": " + e.message + "\r\nFim da compilacao\r\n";
+            return "Linha " + e.line + ": " + e.message + "\nFim da compilacao\n";
         } catch (SyntaxException e) {
             Token token = e.token;
             return "Linha " + token.line + ": erro sintatico proximo a " + token.lexeme
-                + "\r\nFim da compilacao\r\n";
+                + "\nFim da compilacao\n";
         } catch (SemanticException e) {
             return e.getMessage();
         }
@@ -408,7 +408,7 @@ public class Main {
         void addSymbol(String name, String type, int line) {
             if (symbolTable.containsKey(name)) {
                 errors.append("Linha ").append(line).append(": identificador ").append(name)
-                    .append(" ja declarado anteriormente\r\n");
+                    .append(" ja declarado anteriormente\n");
                 errorCount++;
                 return;
             }
@@ -430,7 +430,7 @@ public class Main {
             // User-defined type
             if (!isTypeKnown(type)) {
                 errors.append("Linha ").append(line).append(": tipo ").append(type)
-                    .append(" nao declarado\r\n");
+                    .append(" nao declarado\n");
                 errorCount++;
             }
         }
@@ -438,7 +438,7 @@ public class Main {
         void declareType(String name, String baseType, int line) {
             if (symbolTable.containsKey(name)) {
                 errors.append("Linha ").append(line).append(": identificador ").append(name)
-                    .append(" ja declarado anteriormente\r\n");
+                    .append(" ja declarado anteriormente\n");
                 errorCount++;
             } else {
                 symbolTable.put(name, new Symbol(name, baseType, line));
@@ -448,7 +448,7 @@ public class Main {
         String getType(String name, int line) {
             if (!symbolTable.containsKey(name)) {
                 errors.append("Linha ").append(line).append(": identificador ").append(name)
-                    .append(" nao declarado\r\n");
+                    .append(" nao declarado\n");
                 errorCount++;
                 return "erro";
             }
@@ -458,7 +458,7 @@ public class Main {
         void checkTypeCompatibility(String varName, String assignmentType, int line) {
             if (!symbolTable.containsKey(varName)) {
                 errors.append("Linha ").append(line).append(": identificador ").append(varName)
-                    .append(" nao declarado\r\n");
+                    .append(" nao declarado\n");
                 errorCount++;
                 return;
             }
@@ -466,7 +466,7 @@ public class Main {
             String varType = symbolTable.get(varName).type;
             if (!isCompatible(varType, assignmentType)) {
                 errors.append("Linha ").append(line).append(": atribuicao nao compativel para ")
-                    .append(varName).append("\r\n");
+                    .append(varName).append("\n");
                 errorCount++;
             }
         }
@@ -498,7 +498,7 @@ public class Main {
         }
 
         String getErrors() {
-            return errors.toString() + (errorCount > 0 ? "Fim da compilacao\r\n" : "");
+            return errors.toString() + (errorCount > 0 ? "Fim da compilacao\n" : "");
         }
     }
 
@@ -725,7 +725,7 @@ public class Main {
                 
                 // Type not found
                 semanticAnalyzer.errors.append("Linha ").append(line).append(": tipo ").append(name)
-                    .append(" nao declarado\r\n");
+                    .append(" nao declarado\n");
                 semanticAnalyzer.errorCount++;
                 return "erro";
             }
