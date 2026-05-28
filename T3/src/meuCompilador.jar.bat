@@ -1,3 +1,4 @@
-#!/bin/sh
-DIR=$(cd "$(dirname "$0")" && pwd)
-java -cp "$DIR" Main "$@"
+@echo off
+setlocal
+set "DIR=%~dp0"
+java -jar "%DIR%..\target\meuCompilador.jar" %*
