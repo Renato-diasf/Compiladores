@@ -4,10 +4,10 @@ Implementation for the T4 semantic analyzer.
 
 ## Build
 
-Compile the sources from the `T4` directory:
+Build from the `T4` directory with Maven. The ANTLR lexer is generated automatically:
 
 ```bash
-javac src/*.java -d out
+mvn package
 ```
 
 ## Run
@@ -20,7 +20,13 @@ The analyzer expects two command-line arguments:
 Example:
 
 ```bash
-java -cp out Main casos-de-teste/4.casos_teste_t4/entrada/1.algoritmo_7-2_apostila_LA.txt /tmp/out.txt
+java -jar ../compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar \
+  ./meuCompilador \
+  /usr/bin/gcc \
+  /tmp/compiladores-corretor \
+  ../casos-de-teste \
+  "000000" \
+  "t4"
 ```
 
 ## Validation

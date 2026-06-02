@@ -1,7 +1,6 @@
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -23,12 +22,11 @@ public class Main {
 
     private static String analisar(String fonte) {
         try {
-            Lexer lexer = new Lexer(fonte);
-            List<Token> tokens = lexer.tokenizar();
+            java.util.List<Token> tokens = AntlrTokenAdapter.tokenizar(fonte);
             Parser parser = new Parser(tokens);
             parser.programa();
             return "";
-        } catch (Lexer.LexicalException e) {
+        } catch (AntlrTokenAdapter.LexicalException e) {
             return "Linha " + e.line + ": " + e.message + "\nFim da compilacao\n";
         } catch (Parser.SyntaxException e) {
             return "Linha " + e.token.line + ": erro sintatico proximo a " + e.token.lexeme
