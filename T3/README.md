@@ -1,5 +1,9 @@
 # T3 - Compilador
 
+Murilo Eduardo Feijo Ramos - 824389
+Renato Dias Ferreira Campos - 821328
+Leonardo Shoji Ishiy - 823830
+
 Este projeto contém o compilador do trabalho T3.
 
 ## Como compilar com Maven
