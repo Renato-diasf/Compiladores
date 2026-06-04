@@ -1,5 +1,11 @@
 # T4
 
+Murilo Eduardo Feijo Ramos - 824389
+
+Renato Dias Ferreira Campos - 821328
+
+Leonardo Shoji Ishiy - 823830
+
 Implementation for the T4 semantic analyzer.
 
 ## Build
