@@ -1,3 +1,3 @@
 #!/bin/sh
 DIR=$(cd "$(dirname "$0")" && pwd)
-java -cp "$DIR/../out" Main "$@"
+java -jar "$DIR/../target/meuCompilador.jar" "$@"

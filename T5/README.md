@@ -8,17 +8,15 @@ Leonardo Shoji Ishiy - 823830
 
 Este projeto contem o compilador do trabalho T5.
 
-## Como compilar sem Maven
+## Como compilar com Maven
 
-Na pasta raiz do repositorio, execute:
+Na pasta `T5`, execute:
 
 ```powershell
-New-Item -ItemType Directory -Force T5\out
-javac -encoding UTF-8 -d T5\out T5\src\*.java
-jar cfe T5\src\meuCompilador.jar Main -C T5\out .
+mvn package
 ```
 
-Isso gera o jar executavel em `T5\src\meuCompilador.jar`.
+Isso gera o jar executavel em `target/meuCompilador.jar`.
 
 ## Como rodar localmente
 
@@ -30,24 +28,24 @@ O compilador recebe dois argumentos:
 Exemplo no PowerShell, a partir da raiz do repositorio:
 
 ```powershell
-java -jar T5\src\meuCompilador.jar 'casos-de-teste\5.casos_teste_t5\1.entrada\1.declaracao_leitura_impressao_inteiro.alg' 'c:\temp\saida.c'
+java -jar T5\target\meuCompilador.jar 'casos-de-teste\5.casos_teste_t5\1.entrada\1.declaracao_leitura_impressao_inteiro.alg' 'c:\temp\saida.c'
+```
+
+Tambem e possivel usar o wrapper:
+
+```powershell
+& '.\T5\src\meuCompilador.jar.bat' 'casos-de-teste\5.casos_teste_t5\1.entrada\1.declaracao_leitura_impressao_inteiro.alg' 'c:\temp\saida.c'
 ```
 
 ## Como rodar os casos de teste
 
-Para testar com o corretor automatico, compile o jar e execute, a partir da raiz do repositorio:
+Para testar com o corretor automatico, compile com Maven e use o jar gerado:
 
 ```powershell
-java -jar compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar "java -jar T5\src\meuCompilador.jar" "C:\MinGW\bin\gcc.exe" "c:\temp" "casos-de-teste" "176168, 155551, 187123" "t5"
+java -jar compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar "java -jar T5\target\meuCompilador.jar" "C:\MinGW\bin\gcc.exe" "c:\temp" "casos-de-teste" "176168, 155551, 187123" "t5"
 ```
 
-Se voce estiver dentro da pasta `T3`, use os caminhos com `..`:
-
-```powershell
-java -jar ..\compiladores-corretor-automatico-1.0-SNAPSHOT-jar-with-dependencies.jar "java -jar ..\T5\src\meuCompilador.jar" "C:\MinGW\bin\gcc.exe" "c:\temp" "..\casos-de-teste" "176168, 155551, 187123" "t5"
-```
 
 ## Observacao
 
-No T5, o corretor pode chamar o comando `java -jar T5\src\meuCompilador.jar` diretamente. O arquivo `T5\src\meuCompilador.jar.bat` tambem foi mantido como wrapper auxiliar.
-az\z\
+No Windows, o corretor pode chamar o comando `java -jar T5\target\meuCompilador.jar` diretamente. O arquivo `T5\src\meuCompilador.jar.bat` tambem foi mantido como wrapper auxiliar, mas o jar precisa ter sido gerado antes com `mvn package`.
