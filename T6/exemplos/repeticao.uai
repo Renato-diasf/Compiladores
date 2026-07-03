@@ -1,0 +1,10 @@
+uai TabuadaMineira
+
+trem numero: inteiro = 5.
+trem i: inteiro = 1.
+
+pra i de 1 ate 10 faz
+    mostra numero, "x", i, "=", numero * i.
+fimpra.
+
+cabou

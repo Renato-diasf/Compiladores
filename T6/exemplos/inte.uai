@@ -1,0 +1,10 @@
+uai RepeticaoComInte
+
+trem contador: inteiro = 1.
+
+inté contador <= 3 faz
+    mostra "volta", contador.
+    contador = contador + 1.
+prontim.
+
+cabou

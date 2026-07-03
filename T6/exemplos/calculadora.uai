@@ -1,0 +1,17 @@
+uai CalculadoraDeQuitanda
+
+trem pao_de_queijo: inteiro = 6.
+trem cafe: real = 2.5.
+trem total: real = pao_de_queijo * cafe.
+trem fregues: texto = "sô".
+trem barato: logico = total < 20.0.
+
+mostra "Uai,", fregues, "deu", total.
+
+se barato entao
+    mostra "Conta boa demais da conta".
+senao
+    mostra "Ficou salgado".
+fimse.
+
+cabou

@@ -1,0 +1,11 @@
+/home/murilo/projects/compiladores/Compiladores/T6/src/main/java/br/com/compiladores/uailang/CompilerVisitor.java
+/home/murilo/projects/compiladores/Compiladores/T6/src/main/java/br/com/compiladores/uailang/Expr.java
+/home/murilo/projects/compiladores/Compiladores/T6/src/main/java/br/com/compiladores/uailang/Main.java
+/home/murilo/projects/compiladores/Compiladores/T6/src/main/java/br/com/compiladores/uailang/SyntaxErrorListener.java
+/home/murilo/projects/compiladores/Compiladores/T6/src/main/java/br/com/compiladores/uailang/Type.java
+/home/murilo/projects/compiladores/Compiladores/T6/target/generated-sources/antlr4/UaiLangBaseListener.java
+/home/murilo/projects/compiladores/Compiladores/T6/target/generated-sources/antlr4/UaiLangBaseVisitor.java
+/home/murilo/projects/compiladores/Compiladores/T6/target/generated-sources/antlr4/UaiLangLexer.java
+/home/murilo/projects/compiladores/Compiladores/T6/target/generated-sources/antlr4/UaiLangListener.java
+/home/murilo/projects/compiladores/Compiladores/T6/target/generated-sources/antlr4/UaiLangParser.java
+/home/murilo/projects/compiladores/Compiladores/T6/target/generated-sources/antlr4/UaiLangVisitor.java

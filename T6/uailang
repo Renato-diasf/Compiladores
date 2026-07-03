@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ANTLR_JAR="$HOME/.m2/repository/org/antlr/antlr4-runtime/4.13.1/antlr4-runtime-4.13.1.jar"
+
+if [ ! -f "$DIR/target/uailang.jar" ]; then
+    (cd "$DIR" && mvn -q package)
+fi
+
+java -cp "$DIR/target/uailang.jar:$ANTLR_JAR" br.com.compiladores.uailang.Main "$@"

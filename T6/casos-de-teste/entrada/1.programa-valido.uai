@@ -1,0 +1,6 @@
+uai ProgramaValido
+trem x: inteiro = 2.
+trem y: inteiro = 3.
+trem nome: texto = "Minas".
+mostra nome, x + y.
+cabou

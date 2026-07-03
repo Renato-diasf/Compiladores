@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -lt 1 ]; then
+    echo "Uso: ./uairun arquivo.uai"
+    exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OUT="$(mktemp /tmp/uailang-XXXXXX.py)"
+
+"$DIR/uailang" "$1" "$OUT"
+python3 "$OUT"

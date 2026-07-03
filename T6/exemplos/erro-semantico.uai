@@ -1,0 +1,11 @@
+uai TremErrado
+
+trem conta: inteiro = "caro".
+trem conta: real = 3.0.
+mostra total.
+
+se conta entao
+    mostra "nao pode".
+fimse.
+
+cabou
