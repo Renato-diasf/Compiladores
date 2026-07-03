@@ -1,5 +1,7 @@
 # UaiLang - T6
 
+Murilo Eduardo Feijo Ramos - 824389
+
 UaiLang e uma linguagem pequena, com palavras inspiradas no sotaque e no vocabulario de Minas Gerais, que compila para Python 3.
 
 ## Ideia da linguagem
